@@ -1,0 +1,1 @@
+export const BACKEND_HOME_URL = "http://localhost:4000/";
