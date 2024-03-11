@@ -5,6 +5,10 @@ from flask_uploads import UploadSet, configure_uploads, DATA
 import json
 from metaphone import doublemetaphone
 from fuzzywuzzy import fuzz
+import csv
+import pandas as pd
+from io import StringIO
+
 
 
 app = Flask(__name__)
@@ -102,7 +106,7 @@ def testdb():
 
 
 @app.route('/cleardb', methods=['GET'])
-def echo():
+def clearDB():
     try:
         NameData.clear_all()
         return jsonify({"message": "Database cleared successfully!"})
@@ -134,7 +138,7 @@ def download_data():
     except Exception as e:
         return jsonify(e), 500
 
-@app.route('/upload_data', methods=['POST'])
+@app.route('/csv', methods=['POST'])
 def upload_data():
     try:
         # Check for uploaded file
@@ -148,26 +152,23 @@ def upload_data():
         if uploaded_file.filename.lower().endswith(".csv") is False:
             return jsonify({"error": "Invalid file format. Please upload a CSV file."}), 400
 
-        # Save uploaded file (optional, useful for debugging)
-        # filename = uploads.save(uploaded_file)
-
-        # Process CSV data directly from request
-        data = []
-        reader = csv.reader(uploaded_file, delimiter=',')  # Adjust delimiter if needed
-        # Skip header row (optional)
-        next(reader, None)  # Uncomment to skip the first row (header)
-        for row in reader:
-            data.append({"name": row[0], "encoding": row[1]})  # Assuming name in first column and encoding in second
-
-        # Insert data into database
-        for item in data:
-            new_data = NameData(name=item['name'], encoding=item['encoding'])
+        fstt = uploaded_file.stream
+        skipFirst = False
+        for lines in fstt.readlines():
+            if skipFirst is False:
+                skipFirst = True
+                continue
+            lines = lines.decode('utf-8')
+            row = lines.split(',')
+            print(row[0].strip(), row[1].strip())
+            new_data = NameData(name=row[0].strip(), encoding=row[1].strip())
             new_data.save()
 
         return jsonify({"message": "Data uploaded successfully!"})
     except Exception as e:
-        return jsonify({"error": f"Error uploading data: {str(e)}"}), 500
+        jsoned = jsonify(e)
+        return jsonify({"error": f"Error uploading data: {jsoned}"}), 500
 
 
 if __name__ == '__main__':
-    app.run(port=4000, debug=True)
+    app.run(port=4000)
