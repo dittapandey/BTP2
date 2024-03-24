@@ -18,7 +18,7 @@ upload_dir = 'uploads'
 app.config['UPLOADS_DEFAULT_DEST'] = upload_dir
 uploads = UploadSet('csvs', DATA)
 configure_uploads(app, uploads)
-MONGO_URI = "'mongodb+srv://akshayjan2003:quzENIrWYBtCryhB@cluster0.jmirxnu.mongodb.net'"
+MONGO_URI = "mongodb+srv://akshayjan2003:quzENIrWYBtCryhB@cluster0.jmirxnu.mongodb.net"
 client = MongoClient(MONGO_URI)
 
 db = client['voiceOfAlcher']
