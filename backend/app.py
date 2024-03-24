@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
-from flask_mongoengine import MongoEngine, Document
+from pymongo import MongoClient
 from flask_uploads import UploadSet, configure_uploads, DATA
 import json
 from metaphone import doublemetaphone
@@ -18,32 +18,37 @@ upload_dir = 'uploads'
 app.config['UPLOADS_DEFAULT_DEST'] = upload_dir
 uploads = UploadSet('csvs', DATA)
 configure_uploads(app, uploads)
+MONGO_URI = "'mongodb+srv://akshayjan2003:quzENIrWYBtCryhB@cluster0.jmirxnu.mongodb.net'"
+client = MongoClient(MONGO_URI)
+
+db = client['voiceOfAlcher']
 
 
-app.config['MONGODB_SETTINGS'] = {
-    'db': 'voiceOfAlcher',
-    'host': 'mongodb+srv://akshayjan2003:quzENIrWYBtCryhB@cluster0.jmirxnu.mongodb.net',
-    'port': 27017,
-    'authentication_source': 'admin',
-    'retryWrites': True,
-    'connect': True
-}
+class NameData():
+    """
+        name = StringField
+        encoding = StringField
+    """
 
-db = MongoEngine(app)
+    def __init__(self, name, encoding):
+        self.name = name
+        self.encoding = encoding
 
+    collection = db["NameData"]
 
-class NameData(db.Document):
-    name = db.StringField()
-    encoding = db.StringField()
+    def save(self):
+        collection.insert_one(self.__dict__)
+
 
     @classmethod
     def get_all_names(cls, encoding):
-        return [document.name for document in cls.objects(encoding=encoding)]
+        arr = collection.find({"encoding": encoding})
+        return [el['name'] for el in arr]
 
     @classmethod
     def fuzzy_search(cls, search_term, score_cutoff=80):
         results = []
-        for document in cls.objects:
+        for document in collection.find():
             score = fuzz.ratio(search_term.lower(), document.encoding.lower())
             if score >= score_cutoff:
                 results.append((document, score))
@@ -51,9 +56,15 @@ class NameData(db.Document):
 
     @classmethod
     def clear_all(cls):
-        cls.objects.delete()
+        collection.delete_many({})
 
+    @classmethod
+    def find(cls, dict_ = {}):
+        return collection.find(dict_)
 
+    @classmethod
+    def bulk_insert(cls, data):
+        collection.insert_many(data)
 
 
 @app.route('/query', methods=['POST'])
@@ -116,7 +127,7 @@ def clearDB():
 @app.route('/csv', methods=['GET'])
 def download_data():
     try:
-        data = NameData.objects.all()
+        data = NameData.find({})
         csv_data = []
 
         # Create CSV header
@@ -154,15 +165,19 @@ def upload_data():
 
         fstt = uploaded_file.stream
         skipFirst = False
+        uploaddata = []
         for lines in fstt.readlines():
             if skipFirst is False:
                 skipFirst = True
                 continue
             lines = lines.decode('utf-8')
             row = lines.split(',')
-            print(row[0].strip(), row[1].strip())
-            new_data = NameData(name=row[0].strip(), encoding=row[1].strip())
-            new_data.save()
+            # print(row[0].strip(), row[1].strip())
+            uploaddata.append({
+                "name": row[0].strip(),
+                "encoding": row[1].strip()
+            })
+        NameData.bulk_insert(uploaddata)
 
         return jsonify({"message": "Data uploaded successfully!"})
     except Exception as e:
