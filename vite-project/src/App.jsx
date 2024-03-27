@@ -64,6 +64,7 @@ function App() {
     axios.post(BACKEND_HOME_URL + 'csv', formData)
       .then((response) => {
         console.log('Upload successful:', response.data);
+        alert('Upload successful');
         // Handle successful upload on the backend
       })
       .catch((error) => {
@@ -80,7 +81,7 @@ function App() {
 
   return (
     <>
-      <div style={{
+       <div style={{
         height: "100vh",
         width: "100vw",
         display: "flex",
@@ -90,39 +91,56 @@ function App() {
         alignItems: "center",
         gap: "1rem"
       }}>
-        <input type='text' placeholder='Enter your search name' style={{
+        <h1>Medical Record Matching</h1>
+        <input type='text'
+        placeholder='Enter your Name'
+        style={{
           width: "30rem",
           padding: "1rem"
-        }} onChange={(e) => {
-          setInputState(e.currentTarget.value);
-        }}></input>
-        <button style={{
-          width: "10rem"
-        }} onClick={(e) => { onSubmit() }}>Submit</button>
-        <div>{searchState === 0 ? "Search Something" : (searchState === 1 ? "Loading" : (searchState === 404 ? "No results found." : <>
-          <div>
-            <ol>
-              {responseData.map((el, idx) => {
-                return <li key={idx}>{el}</li>
-              })}
-            </ol>
-          </div>
-        </>))}</div>
+        }}
+        onChange={(e) => {setInputState(e.currentTarget.value);}}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') {onSubmit();}}}>
+        </input>
+        <button
+          style={{width: "10rem"}}
+          onClick={(e) => {onSubmit();}}>
+           Submit
+        </button>
+        <div>
+          {searchState === 0
+            ? "Search Something"
+            : searchState === 1
+            ? "Loading"
+            : searchState === 404
+            ? "No results found."
+            : (
+                <>
+                  <div>
+                    <ol>
+                      {responseData.map((el, idx) => {
+                        return <li key={idx}>{el}</li>;
+                      })}
+                    </ol>
+                  </div>
+                </>
+              )}
+        </div>
+
       </div>
 
       <div style={{
         position: "absolute",
         backgroundColor: "white",
-        padding: "1rem",
+        borderRadius: "25px",
+        padding: "1.5rem",
         bottom: "0",
         right: "0",
         marginRight: "10rem",
-        marginBottom: "10rem"
+        marginBottom: "10rem",
+        display: "flex",
+        gap: "0.4rem"
       }}>
-        {/* <label>
-          <IoMdCloudDownload />
-          <input type="file" style={{ display: "none" }} onChange={(e) => handleUpload(e)} />
-        </label> */}
         <button onClick={(e) => { handleDownload() }}>
           <IoMdCloudDownload />
         </button>
