@@ -21,7 +21,7 @@ configure_uploads(app, uploads)
 MONGO_URI = "mongodb+srv://akshayjan2003:quzENIrWYBtCryhB@cluster0.jmirxnu.mongodb.net"
 client = MongoClient(MONGO_URI)
 
-db = client['voiceOfAlcher']
+db = client['test']
 
 
 class NameData():
@@ -34,37 +34,38 @@ class NameData():
         self.name = name
         self.encoding = encoding
 
-    collection = db["NameData"]
+    collection = db["name_data"]
 
     def save(self):
-        collection.insert_one(self.__dict__)
+        NameData.collection.insert_one(self.__dict__)
 
 
     @classmethod
     def get_all_names(cls, encoding):
-        arr = collection.find({"encoding": encoding})
+        arr = cls.collection.find({"encoding": encoding})
         return [el['name'] for el in arr]
 
     @classmethod
     def fuzzy_search(cls, search_term, score_cutoff=80):
         results = []
-        for document in collection.find():
-            score = fuzz.ratio(search_term.lower(), document.encoding.lower())
+        cursor = cls.collection.find()
+        for document in cursor:
+            score = fuzz.ratio(search_term.lower(), document['encoding'].lower())
             if score >= score_cutoff:
                 results.append((document, score))
         return results
 
     @classmethod
     def clear_all(cls):
-        collection.delete_many({})
+        cls.collection.delete_many({})
 
     @classmethod
     def find(cls, dict_ = {}):
-        return collection.find(dict_)
+        return cls.collection.find(dict_)
 
     @classmethod
     def bulk_insert(cls, data):
-        collection.insert_many(data)
+        cls.collection.insert_many(data)
 
 
 @app.route('/query', methods=['POST'])
@@ -80,7 +81,7 @@ def query():
         if len(sorted_results) > 5:
             sorted_results = sorted_results[:5]
 
-        return [el[0].name for el in sorted_results]
+        return jsonify([el[0]['name'] for el in sorted_results])
     except Exception as e:
         return jsonify(e), 500
 
@@ -127,19 +128,18 @@ def clearDB():
 @app.route('/csv', methods=['GET'])
 def download_data():
     try:
-        data = NameData.find({})
+        cursor = NameData.find({})
         csv_data = []
 
         # Create CSV header
         csv_data.append(["Name", "Encoding"])
 
         # Add document data to CSV rows
-        for document in data:
-            csv_data.append([document.name, document.encoding])
+        for document in cursor:
+            csv_data.append([document['name'], document['encoding']])
 
         # Generate CSV string
         csv_string = "\n".join([",".join(row) for row in csv_data])
-        print(csv_string)
 
         # Set response headers for CSV download
         response = make_response(csv_string)
