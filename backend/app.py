@@ -100,7 +100,8 @@ class NameData():
                 maxInRows = np.amax(fuzz_matrix, axis=1)
                 col_index = fuzz_matrix.argmax(axis=1)
                 avg_ratio = np.sum(maxInRows) / fuzz_matrix.shape[0]
-            
+                
+            # a, b = cls._transformer__(document['diagnosis'], diagnosis) if diagnosis is not None else (0, 0)
             a, b =  ([0], [0])
             if cosine_similarity([a], [b]) >= sim_score or avg_ratio>tol:
                 results.append((document, avg_ratio, sim_score))
