@@ -9,6 +9,9 @@ import csv
 import pandas as pd
 from io import StringIO
 import numpy as np
+from pymongo import ReturnDocument
+# import ObjectID
+from bson.objectid import ObjectId
 # from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -156,6 +159,11 @@ class NameData():
     def bulk_insert(cls, data):
         cls.collection.insert_many(data)
 
+    @classmethod
+    def update(cls, uuid, data):
+        return cls.collection.find_one_and_update({'_id': ObjectId(uuid)}, {'$set': data}, return_document=ReturnDocument.AFTER)
+
+
 
 @app.route('/query', methods=['POST'])
 def query():
@@ -175,14 +183,19 @@ def query():
         if len(sorted_results) > 5:
             sorted_results = sorted_results[:5]
 
-        return jsonify([el[0]['name'] for el in sorted_results])
+        return jsonify([{
+            "name": el[0]['name'],
+            "phone": el[0]['phone'],
+            "diagnosis": el[0]['diagnosis'],
+            "gender": el[0]['gender'],
+            "uuid": str(el[0]['_id']),
+        } for el in sorted_results])
     except Exception as e:
         return jsonify(e), 500
 
 
-
 @app.route('/entry', methods=['POST'])
-def testdb():
+def newEntry():
     try:
         data = request.data
         data = json.loads(data)
@@ -197,6 +210,44 @@ def testdb():
         return f"Successly added {name}::{gender}:{diagnosis}:{phone}", 200
     except:
         return "Server Error (CS)", 500
+
+@app.route('/update', methods=['PUT'])
+def updateEntry():
+    try:
+        data = request.data
+        data = json.loads(data)
+        if 'uuid' not in data:
+            return jsonify({"error": "Invalid request"}), 400
+        uuid = data['uuid']
+        name = data.get('name', None)
+        diagnosis = data.get('diagnosis', None)
+        phone = data.get('phone', None)
+        gender = data.get('gender', None)
+
+        update_data = {}
+        if name is not None:
+            update_data['name'] = name
+        if diagnosis is not None:
+            update_data['diagnosis'] = diagnosis
+        if phone is not None:
+            update_data['phone'] = phone
+        if gender is not None:
+            update_data['gender'] = gender
+
+        updated = NameData.update(uuid, update_data)
+        if updated is None:
+            return jsonify({"error": "Record not found"}), 404
+
+        return jsonify({"message": "Record updated successfully!",
+                        "name": updated['name'],
+                        "phone": updated['phone'],
+                        "diagnosis": updated['diagnosis'],
+                        "gender": updated['gender'],
+                        "uuid": str(updated['_id'])
+                    })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
 
 
 @app.route('/cleardb', methods=['DELETE'])
