@@ -3,7 +3,7 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from flask_uploads import UploadSet, configure_uploads, DATA
 import json
-from metaphone import doublemetaphone
+# from metaphone import doublemetaphone
 from fuzzywuzzy import fuzz
 import csv
 import pandas as pd
@@ -12,8 +12,10 @@ import numpy as np
 from pymongo import ReturnDocument
 # import ObjectID
 from bson.objectid import ObjectId
-# from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from keras.models import Sequential
+from keras.layers import Dense, InputLayer, Softmax
 
 app = Flask(__name__)
 CORS(app)
@@ -28,6 +30,29 @@ client = MongoClient(MONGO_URI)
 db = client['test']
 
 
+class sentence_model():
+    def __init__(self, model_path, transformer, nlabels=5):
+        self.model_path = model_path
+        self.transformer = transformer
+        self.nlabels = nlabels
+        self.lr_model = Sequential([
+            InputLayer(input_shape=(transformer.encode("Hello World!").shape[0]*2,)),
+            Dense(nlabels, activation='sigmoid'),
+            Softmax()
+        ])
+        self.lr_model.load_weights(self.model_path)
+
+    
+    def __call__(self, text1, text2):
+        enc1 = self.transformer.encode(text1)
+        enc2 = self.transformer.encode(text2)
+        features = np.concatenate([np.abs(enc1-enc2), enc1*enc2]).reshape(1,-1)
+        # print(features.shape, enc1.shape, enc2.shape)
+        predictions = self.lr_model.predict(features)
+        # print(predictions.shape, predictions)
+        return np.dot(predictions, np.arange(1,self.nlabels+1))[0]/self.nlabels
+        
+
 class NameData():
     """
         name = StringField
@@ -35,7 +60,8 @@ class NameData():
         diagnosis = StringField
         phone = StringField
     """
-    # __transformer__ = SentenceTransformer('PubMedBert')
+    __transformer__ = SentenceTransformer('C:/Users/91868/Documents/BTP/project/MINILM')
+    __lr_model_path__ = 'Models_SICK/MINILM/model.h5'
     collection = db["name_data"]
 
 
@@ -44,6 +70,7 @@ class NameData():
         self.gender = gender
         self.diagnosis = diagnosis
         self.phone = phone
+        self.diagnosis_model = sentence_model(self.__lr_model_path__, self.__transformer__)
 
     def save(self):
         NameData.collection.insert_one(self.__dict__)
@@ -105,9 +132,10 @@ class NameData():
                 avg_ratio = np.sum(maxInRows) / fuzz_matrix.shape[0]
                 
             # a, b = cls._transformer__(document['diagnosis'], diagnosis) if diagnosis is not None else (0, 0)
-            a, b =  ([0], [0])
-            if cosine_similarity([a], [b]) >= sim_score or avg_ratio>tol:
-                results.append((document, avg_ratio, sim_score))
+            doc_similarity = cls.diagnosis_model(document['diagnosis'], diagnosis) if diagnosis is not None else 0
+
+            if avg_ratio>tol:
+                results.append((document, avg_ratio, doc_similarity))
 
         return results
     
@@ -126,7 +154,7 @@ class NameData():
         for document in domain:
             if str(phone) == document['phone']:
                 results.append(document)
-        return results
+        return results if len(results) > 0 else domain
     
     @classmethod
     def GenderQuery(cls, gender, domain):
@@ -159,7 +187,7 @@ class NameData():
     def bulk_insert(cls, data):
         cls.collection.insert_many(data)
 
-    @classmethod
+    @classmethod    
     def update(cls, uuid, data):
         return cls.collection.find_one_and_update({'_id': ObjectId(uuid)}, {'$set': data}, return_document=ReturnDocument.AFTER)
 
@@ -170,16 +198,19 @@ def query():
     try:
         data = request.data
         data = json.loads(data)
-        if 'name' not in data or 'gender' not in data or 'diagnosis' not in data or 'phone' not in data:
-            return jsonify({"error": "Invalid request"}), 400
-        
-        name = data['name']
-        gender = data['gender']
-        diagnosis = data['diagnosis']
-        phone = data['phone']
+        # if 'name' not in data or 'gender' not in data or 'diagnosis' not in data or 'phone' not in data:
+        #     return jsonify({"error": "Invalid request"}), 400
+        name = data.get('name', None)
+        gender = data.get('gender', None)
+        diagnosis = data.get('diagnosis', None)
+        phone = data.get('phone', None)
+        # name = data['name']
+        # gender = data['gender']
+        # diagnosis = data['diagnosis']
+        # phone = data['phone']
         # encodedQuery = encodeName(query)
         res = NameData.QueryRecord(name, gender, diagnosis, phone)
-        sorted_results = sorted(res, key=lambda x: x[1], reverse=True)
+        sorted_results = sorted(res, key=lambda x: (x[0],x[1]), reverse=True)
         if len(sorted_results) > 5:
             sorted_results = sorted_results[:5]
 
@@ -199,12 +230,13 @@ def newEntry():
     try:
         data = request.data
         data = json.loads(data)
-        if 'name' not in data or 'gender' not in data or 'diagnosis' not in data or 'phone' not in data:
-            return jsonify({"error": "Invalid request"}), 400
+        # if 'name' not in data or 'gender' not in data or 'diagnosis' not in data or 'phone' not in data:
+        #     return jsonify({"error": "Invalid request"}), 400
         name = data['name']
         gender = data['gender']
         diagnosis = data['diagnosis']
         phone = data['phone']
+        print("New record added:", name, gender, diagnosis, phone)
         dbData = NameData(name=name, gender=gender, diagnosis=diagnosis, phone=phone) 
         dbData.save()
         return f"Successly added {name}::{gender}:{diagnosis}:{phone}", 200
