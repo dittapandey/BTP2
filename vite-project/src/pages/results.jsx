@@ -20,6 +20,7 @@ const Results = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [pageNumber, setPageNumber] = useState(0);
 
   const onSubmit = () => {
     setSearchState(1);
@@ -32,6 +33,7 @@ const Results = () => {
       } else {
         setSearchState(200);
         setResponseData(lst);
+        if (lst.length > 0) setPageNumber(1);
       }
     };
     console.log(inputState);
@@ -142,12 +144,12 @@ const Results = () => {
             <div className='p-4'>
               <div className='flex justify-between items-start'>
                 <div className='flex flex-col items-start justify-between'>
-                  <label className='block mt-4 font-medium text-gray-700 dark:text-gray-300'>
+                  <label className='block mt-4 text-gray-700 dark:text-gray-300 font-semibold'>
                     Patient Name
                   </label>
                   <input
                     type='text'
-                    placeholder='Enter patient name'
+                    placeholder='No name'
                     className={`block mt-2 w-full py-1.5 pr-5 text-gray-700 bg-white border ${
                       isEditing ? "border-gray-200 pl-6" : "border-transparent"
                     } rounded-lg placeholder-gray-400/70 rtl:pr-11 rtl:pl-5 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
@@ -162,7 +164,7 @@ const Results = () => {
                   ></input>
                 </div>
                 <button
-                  className='m-4'
+                  className='m-4 bg-gray-50'
                   onClick={() => setIsEditing(true)}
                   hidden={isEditing}
                 >
@@ -171,7 +173,7 @@ const Results = () => {
               </div>
               <div className='flex justify-between items-center w-full'>
                 <div className='flex flex-col items-start justify-between'>
-                  <label className='block mt-4 font-medium text-gray-700 dark:text-gray-300'>
+                  <label className='block mt-4 text-gray-700 dark:text-gray-300 font-semibold'>
                     Gender
                   </label>
                   <div className='inline-flex mt-2 overflow-hidden bg-white border divide-x rounded-lg dark:bg-gray-900 rtl:flex-row-reverse dark:border-gray-700 dark:divide-gray-700'>
@@ -180,7 +182,7 @@ const Results = () => {
                       className={
                         formData["gender"] == "f"
                           ? "bg-gray-200 px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:bg-gray-800 dark:text-gray-300"
-                          : "px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
+                          : "px-5 py-2 bg-gray-100 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
                       }
                       onClick={() => {
                         setFormData({
@@ -196,7 +198,7 @@ const Results = () => {
                       className={
                         formData["gender"] == "m"
                           ? "bg-gray-200 px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300 "
-                          : "px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
+                          : "px-5 py-2 bg-gray-100 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
                       }
                       onClick={() => {
                         setFormData({
@@ -212,7 +214,7 @@ const Results = () => {
                       className={
                         formData["gender"] == ""
                           ? "bg-gray-200 px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300"
-                          : "px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
+                          : "px-5 py-2 bg-gray-100 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
                       }
                       onClick={() => {
                         setFormData({
@@ -226,12 +228,12 @@ const Results = () => {
                   </div>
                 </div>
                 <div className='flex flex-col items-start justify-between'>
-                  <label className='block mt-4 font-medium text-gray-700 dark:text-gray-300'>
+                  <label className='block mt-4 text-gray-700 dark:text-gray-300 font-semibold'>
                     Phone Number
                   </label>
                   <input
                     type='text'
-                    placeholder='Enter phone number'
+                    placeholder='No phone number'
                     className={`block mt-2 w-full py-1.5 pr-5 text-gray-700 bg-white border ${
                       isEditing ? "border-gray-200 pl-6" : "border-transparent"
                     } rounded-lg placeholder-gray-400/70 rtl:pr-11 rtl:pl-5 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40`}
@@ -246,11 +248,11 @@ const Results = () => {
                   ></input>
                 </div>
               </div>
-              <label className='block mt-4 font-medium text-gray-700 dark:text-gray-300'>
+              <label className='block mt-4 text-gray-700 dark:text-gray-300 font-semibold'>
                 Diagnosis
               </label>
               <textarea
-                placeholder='Enter diagnosis'
+                placeholder='No diagnosis'
                 rows={6}
                 className={`block mt-2 w-full py-1.5 pr-5 text-gray-700 bg-white border p-2 resize-none ${
                   isEditing ? "border-gray-200" : "border-transparent"
@@ -378,7 +380,7 @@ const Results = () => {
                 diagnosis: e.currentTarget.value,
               });
             }}
-            value = {inputState["diagnosis"] ?? ""}
+            value={inputState["diagnosis"] ?? ""}
           ></input>
           <div className='mt-2 md:flex items-end justify-between '>
             <div className='md:flex items-end justify-between gap-x-4'>
@@ -391,7 +393,7 @@ const Results = () => {
                     className={
                       selectedGender == "f"
                         ? "bg-gray-200 px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:bg-gray-800 dark:text-gray-300"
-                        : "px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
+                        : "px-5 bg-gray-50 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
                     }
                     onClick={() => {
                       setSelectedGender("f");
@@ -403,7 +405,7 @@ const Results = () => {
                     className={
                       selectedGender == "m"
                         ? "bg-gray-200 px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300 "
-                        : "px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
+                        : "px-5 bg-gray-50 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
                     }
                     onClick={() => {
                       setSelectedGender("m");
@@ -414,8 +416,8 @@ const Results = () => {
                   <button
                     className={
                       selectedGender == ""
-                        ? "bg-gray-200 px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300"
-                        : "px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm dark:hover:bg-gray-800 dark:text-gray-300 hover:bg-gray-100"
+                        ? "bg-gray-200 px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm "
+                        : "px-5 py-2 text-xs font-medium text-gray-600 transition-colors duration-200 sm:text-sm bg-gray-50 hover:bg-gray-100"
                     }
                     onClick={() => {
                       setSelectedGender("");
@@ -444,9 +446,12 @@ const Results = () => {
               </div>
             </div>
             <div className='md:flex items-end justify-end gap-x-4'>
-              <button className='flex items-center justify-center w-1/2 px-5 py-2 text-sm tracking-wide text-white transition-colors duration-200 bg-blue-500 rounded-lg shrink-0 sm:w-auto gap-x-2 hover:bg-blue-600 dark:hover:bg-blue-500 dark:bg-blue-600' onClick={
-                () => {handleAddPatient()}
-              }>
+              <button
+                className='flex items-center justify-center w-1/2 px-5 py-2 text-sm tracking-wide text-white transition-colors duration-200 bg-blue-500 rounded-lg shrink-0 sm:w-auto gap-x-2 hover:bg-blue-600 dark:hover:bg-blue-500 dark:bg-blue-600'
+                onClick={() => {
+                  handleAddPatient();
+                }}
+              >
                 <svg
                   xmlns='http://www.w3.org/2000/svg'
                   fill='none'
@@ -485,36 +490,9 @@ const Results = () => {
                     <tr>
                       <th
                         scope='col'
-                        className='py-3.5 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400'
+                        className='px-4 py-3.5 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400'
                       >
-                        <button className='flex items-center gap-x-3 focus:outline-none'>
-                          <span>Name</span>
-                          <svg
-                            className='h-3'
-                            viewBox='0 0 10 11'
-                            fill='none'
-                            xmlns='http://www.w3.org/2000/svg'
-                          >
-                            <path
-                              d='M2.13347 0.0999756H2.98516L5.01902 4.79058H3.86226L3.45549 3.79907H1.63772L1.24366 4.79058H0.0996094L2.13347 0.0999756ZM2.54025 1.46012L1.96822 2.92196H3.11227L2.54025 1.46012Z'
-                              fill='currentColor'
-                              stroke='currentColor'
-                              strokeWidth='0.1'
-                            />
-                            <path
-                              d='M0.722656 9.60832L3.09974 6.78633H0.811638V5.87109H4.35819V6.78633L2.01925 9.60832H4.43446V10.5617H0.722656V9.60832Z'
-                              fill='currentColor'
-                              stroke='currentColor'
-                              strokeWidth='0.1'
-                            />
-                            <path
-                              d='M8.45558 7.25664V7.40664H8.60558H9.66065C9.72481 7.40664 9.74667 7.42274 9.75141 7.42691C9.75148 7.42808 9.75146 7.42993 9.75116 7.43262C9.75001 7.44265 9.74458 7.46304 9.72525 7.49314C9.72522 7.4932 9.72518 7.49326 9.72514 7.49332L7.86959 10.3529L7.86924 10.3534C7.83227 10.4109 7.79863 10.418 7.78568 10.418C7.77272 10.418 7.73908 10.4109 7.70211 10.3534L7.70177 10.3529L5.84621 7.49332C5.84617 7.49325 5.84612 7.49318 5.84608 7.49311C5.82677 7.46302 5.82135 7.44264 5.8202 7.43262C5.81989 7.42993 5.81987 7.42808 5.81994 7.42691C5.82469 7.42274 5.84655 7.40664 5.91071 7.40664H6.96578H7.11578V7.25664V0.633865C7.11578 0.42434 7.29014 0.249976 7.49967 0.249976H8.07169C8.28121 0.249976 8.45558 0.42434 8.45558 0.633865V7.25664Z'
-                              fill='currentColor'
-                              stroke='currentColor'
-                              strokeWidth='0.3'
-                            />
-                          </svg>
-                        </button>
+                        Name
                       </th>
                       <th
                         scope='col'
@@ -541,7 +519,7 @@ const Results = () => {
                   </thead>
                   <tbody className='bg-white divide-y divide-gray-200 dark:divide-gray-700 dark:bg-gray-900'>
                     {searchState === 200 &&
-                      responseData.map((data, idx) => {
+                      responseData.slice(10*(pageNumber-1), 10*pageNumber - 1).map((data, idx) => {
                         return (
                           <tr key={idx}>
                             <td className='px-4 py-4 text-sm font-medium whitespace-nowrap'>
@@ -570,7 +548,7 @@ const Results = () => {
                             </td>
                             <td className='px-4 py-4 text-sm whitespace-nowrap'>
                               <button
-                                className='px-1 py-1 text-gray-500 transition-colors duration-200 dark:text-gray-300 hover:bg-gray-100'
+                                className='px-1 py-1 text-gray-500 transition-colors duration-200 bg-gray-100 hover:bg-gray-100'
                                 onClick={() => {
                                   setShowModal(true);
                                   setSelectedPatient(idx);
@@ -614,12 +592,15 @@ const Results = () => {
           <div className='text-sm text-gray-500 dark:text-gray-400'>
             Page{" "}
             <span className='font-medium text-gray-700 dark:text-gray-100'>
-              1 of 1
+              {pageNumber} of {Math.ceil(responseData.length / 10)}
             </span>
           </div>
           <div className='flex items-center mt-4 gap-x-4 sm:mt-0'>
             <a
               href='#'
+              onClick={() => {
+                if (pageNumber > 1) setPageNumber(pageNumber - 1);
+              }}
               className='flex items-center justify-center w-1/2 px-5 py-2 text-sm text-gray-700 capitalize transition-colors duration-200 bg-white border rounded-md sm:w-auto gap-x-2 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-800'
             >
               <svg
@@ -640,6 +621,10 @@ const Results = () => {
             </a>
             <a
               href='#'
+              onClick={() => {
+                if (pageNumber < Math.ceil(responseData.length / 10))
+                  setPageNumber(pageNumber + 1);
+              }}
               className='flex items-center justify-center w-1/2 px-5 py-2 text-sm text-gray-700 capitalize transition-colors duration-200 bg-white border rounded-md sm:w-auto gap-x-2 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-800'
             >
               <span>Next</span>
