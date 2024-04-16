@@ -168,7 +168,7 @@ class NameData():
     def PhoneQuery(cls, phone, domain):
         results = []
         for document in domain:
-            if str(phone) == document['phone']:
+            if 'phone' in document and str(phone) == document['phone']:
                 results.append(document)
         return results if len(results) > 0 else domain
     
@@ -176,7 +176,7 @@ class NameData():
     def GenderQuery(cls, gender, domain):
         results = []
         for document in domain:
-            if gender.lower() == document['gender'].lower():
+            if 'gender' in document and gender.lower() == document['gender'].lower():
                 results.append(document)
         return results 
 
@@ -226,6 +226,15 @@ def query():
         diagnosis = data.get('diagnosis', None)
         phone = data.get('phone', None)
 
+        if name is not None:
+            name = name.strip()
+        if diagnosis is not None:
+            diagnosis = diagnosis.strip()
+        if phone is not None:
+            phone = phone.strip()
+        if gender is not None:
+            gender = gender.strip()
+
         if name == '':
             name = None
         if diagnosis == '':
@@ -235,14 +244,6 @@ def query():
         if gender == '':
             gender = None
 
-        if name is not None:
-            name = name.strip()
-        if diagnosis is not None:
-            diagnosis = diagnosis.strip()
-        if phone is not None:
-            phone = phone.strip()
-        if gender is not None:
-            gender = gender.strip()
 
         # print("Querying: ", name, diagnosis, phone, gender)
         # print("types: ", type(name), type(diagnosis), type(phone), type(gender))
@@ -273,21 +274,17 @@ def newEntry():
         # if 'name' not in data or 'gender' not in data or 'diagnosis' not in data or 'phone' not in data:
         #     return jsonify({"error": "Invalid request"}), 400
 
-        name = data.get('name', None)
-        gender = data.get('gender', None)
-        diagnosis = data.get('diagnosis', None)
-        phone = data.get('phone', None)
+        name = data.get('name', '')
+        gender = data.get('gender', '')
+        diagnosis = data.get('diagnosis', '')
+        phone = data.get('phone', '')
 
         # print("Stripping data")
 
-        if name is not None:
-            name = name.strip()
-        if diagnosis is not None:
-            diagnosis = diagnosis.strip()
-        if phone is not None:
-            phone = phone.strip()
-        if gender is not None:
-            gender = gender.strip()
+        name = name.strip()
+        diagnosis = diagnosis.strip()
+        phone = phone.strip()
+        gender = gender.strip()
 
         # print(f"New Entry: {name} : {type(name)}, {diagnosis} : {type(diagnosis)}, {phone} : {type(phone)}, {gender} : {type(gender)}")
         # app.logger.info(f"NewEntry: {name}")
