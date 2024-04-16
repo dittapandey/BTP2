@@ -17,7 +17,14 @@ from sklearn.metrics.pairwise import cosine_similarity
 from keras.models import Sequential
 from keras.layers import Dense, InputLayer, Softmax
 
+# import logging
+
 app = Flask(__name__)
+
+# app.logger.setLevel(logging.INFO)  # Set log level to INFO
+# handler = logging.FileHandler('app.log')  # Log to a file
+# app.logger.addHandler(handler)
+
 CORS(app)
 
 upload_dir = 'uploads'
@@ -31,10 +38,11 @@ db = client['test']
 
 
 class sentence_model():
-    def __init__(self, model_path, transformer, nlabels=5):
+    def __init__(self, model_path, transformer, nlabels=5, method='cosine'):
         self.model_path = model_path
         self.transformer = transformer
         self.nlabels = nlabels
+        self.method = method
         self.lr_model = Sequential([
             InputLayer(input_shape=(transformer.encode("Hello World!").shape[0]*2,)),
             Dense(nlabels, activation='sigmoid'),
@@ -46,11 +54,15 @@ class sentence_model():
     def __call__(self, text1, text2):
         enc1 = self.transformer.encode(text1)
         enc2 = self.transformer.encode(text2)
-        features = np.concatenate([np.abs(enc1-enc2), enc1*enc2]).reshape(1,-1)
-        # print(features.shape, enc1.shape, enc2.shape)
-        predictions = self.lr_model.predict(features)
-        # print(predictions.shape, predictions)
-        return np.dot(predictions, np.arange(1,self.nlabels+1))[0]/self.nlabels
+        if self.method == 'lr':
+            features = np.concatenate([np.abs(enc1-enc2), enc1*enc2]).reshape(1,-1)
+            # print(features.shape, enc1.shape, enc2.shape)
+            predictions = self.lr_model.predict(features)
+            # print(predictions.shape, predictions)
+            return np.dot(predictions, np.arange(1,self.nlabels+1))[0]/self.nlabels
+        elif self.method == 'cosine':
+            return cosine_similarity([enc1], [enc2])[0][0]
+
         
 
 class NameData():
@@ -60,9 +72,10 @@ class NameData():
         diagnosis = StringField
         phone = StringField
     """
-    __transformer__ = SentenceTransformer('C:/Users/91868/Documents/BTP/project/MINILM')
-    __lr_model_path__ = 'Models_SICK/MINILM/model.h5'
+    __transformer__ = SentenceTransformer('../MINILM')
+    __lr_model_path__ = '../Models_SICK/MINILM/model.h5'
     collection = db["name_data"]
+    diagnosis_model = sentence_model(__lr_model_path__, __transformer__)
 
 
     def __init__(self, name, gender, diagnosis, phone):
@@ -70,10 +83,13 @@ class NameData():
         self.gender = gender
         self.diagnosis = diagnosis
         self.phone = phone
-        self.diagnosis_model = sentence_model(self.__lr_model_path__, self.__transformer__)
+        # self.diagnosis_model = sentence_model(self.__lr_model_path__, self.__transformer__)
 
     def save(self):
-        NameData.collection.insert_one(self.__dict__)
+        try:
+            NameData.collection.insert_one(self.__dict__)
+        except Exception as e:
+            print(f"Error saving record: {e}")
 
     @classmethod
     def get_all_names(cls, encoding):
@@ -167,11 +183,16 @@ class NameData():
     @classmethod
     def QueryRecord(cls, name, gender=None, diagnosis=None, phone=None):
         results = cls.collection.find()
+        results = [document for document in results]
         if phone is not None:
             results = cls.PhoneQuery(phone, results)
         if gender is not None:
             results = cls.GenderQuery(gender, results)
-        results = cls.AdvancedQuery(name, diagnosis, results)
+        
+        if name is not None:
+            results = cls.AdvancedQuery(name, diagnosis, results)
+        else:
+            results = [(document, 0, 0) for document in results]
 
         return results
 
@@ -204,13 +225,30 @@ def query():
         gender = data.get('gender', None)
         diagnosis = data.get('diagnosis', None)
         phone = data.get('phone', None)
-        # name = data['name']
-        # gender = data['gender']
-        # diagnosis = data['diagnosis']
-        # phone = data['phone']
-        # encodedQuery = encodeName(query)
+
+        if name == '':
+            name = None
+        if diagnosis == '':
+            diagnosis = None
+        if phone == '':
+            phone = None
+        if gender == '':
+            gender = None
+
+        if name is not None:
+            name = name.strip()
+        if diagnosis is not None:
+            diagnosis = diagnosis.strip()
+        if phone is not None:
+            phone = phone.strip()
+        if gender is not None:
+            gender = gender.strip()
+
+        # print("Querying: ", name, diagnosis, phone, gender)
+        # print("types: ", type(name), type(diagnosis), type(phone), type(gender))
+
         res = NameData.QueryRecord(name, gender, diagnosis, phone)
-        sorted_results = sorted(res, key=lambda x: (x[0],x[1]), reverse=True)
+        sorted_results = sorted(res, key=lambda x: (x[1],x[2]), reverse=True)
         if len(sorted_results) > 5:
             sorted_results = sorted_results[:5]
 
@@ -228,16 +266,34 @@ def query():
 @app.route('/entry', methods=['POST'])
 def newEntry():
     try:
+        # print("Request received")
         data = request.data
+        # print("Data received")
         data = json.loads(data)
         # if 'name' not in data or 'gender' not in data or 'diagnosis' not in data or 'phone' not in data:
         #     return jsonify({"error": "Invalid request"}), 400
-        name = data['name']
-        gender = data['gender']
-        diagnosis = data['diagnosis']
-        phone = data['phone']
-        print("New record added:", name, gender, diagnosis, phone)
+
+        name = data.get('name', None)
+        gender = data.get('gender', None)
+        diagnosis = data.get('diagnosis', None)
+        phone = data.get('phone', None)
+
+        # print("Stripping data")
+
+        if name is not None:
+            name = name.strip()
+        if diagnosis is not None:
+            diagnosis = diagnosis.strip()
+        if phone is not None:
+            phone = phone.strip()
+        if gender is not None:
+            gender = gender.strip()
+
+        # print(f"New Entry: {name} : {type(name)}, {diagnosis} : {type(diagnosis)}, {phone} : {type(phone)}, {gender} : {type(gender)}")
+        # app.logger.info(f"NewEntry: {name}")
+
         dbData = NameData(name=name, gender=gender, diagnosis=diagnosis, phone=phone) 
+        print(dbData.__dict__)
         dbData.save()
         return f"Successly added {name}::{gender}:{diagnosis}:{phone}", 200
     except:
@@ -258,13 +314,13 @@ def updateEntry():
 
         update_data = {}
         if name is not None:
-            update_data['name'] = name
+            update_data['name'] = name.strip()
         if diagnosis is not None:
-            update_data['diagnosis'] = diagnosis
+            update_data['diagnosis'] = diagnosis.strip()
         if phone is not None:
-            update_data['phone'] = phone
+            update_data['phone'] = phone.strip()
         if gender is not None:
-            update_data['gender'] = gender
+            update_data['gender'] = gender.strip()
 
         updated = NameData.update(uuid, update_data)
         if updated is None:
