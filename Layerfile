@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install python3
 RUN apt-get -y install python3-pip
 # RUN apt-get install pip3
 RUN curl -fSsL https://deb.nodesource.com/setup_12.x | bash && \
-    apt-get install nodejs python3 make gcc build-essential && \
+    apt-get install nodejs python3.9 make gcc build-essential && \
     rm -f /etc/apt/sources.list.d/nodesource.list
 
 MEMORY 5G
