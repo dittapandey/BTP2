@@ -11,7 +11,7 @@ RUN curl -fSsL https://deb.nodesource.com/setup_12.x | bash && \
     apt-get install nodejs python3 make gcc build-essential && \
     rm -f /etc/apt/sources.list.d/nodesource.list
 
-MEMORY 2G
+MEMORY 5G
 ENV NODE_OPTIONS=--max-old-space-size=8192
 # Create some files
 
