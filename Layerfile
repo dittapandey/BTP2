@@ -1,0 +1,42 @@
+#Use an Ubuntu 18.04 base for our staging server
+FROM vm/ubuntu:18.04
+
+# To note: Layerfiles create entire VMs, *not* containers!
+
+# Install python
+RUN apt-get update && apt-get install python3
+RUN apt-get install pip3
+RUN curl -fSsL https://deb.nodesource.com/setup_12.x | bash && \
+    apt-get install nodejs python3 make gcc build-essential && \
+    rm -f /etc/apt/sources.list.d/nodesource.list
+
+MEMORY 2G
+ENV NODE_OPTIONS=--max-old-space-size=8192
+# Create some files
+
+
+# You could also install & start a database:
+# RUN apt-get update && apt-get install postgresql
+
+# This line copies the repository to /root in the runner
+COPY . .
+RUN ls
+
+# Expose the webserver in the staging server as a secure link.
+# Whenever someone clicks the link, we'll load this staging server and forward
+# their requests to it.
+
+RUN pip3 install -r ./backend/requirements.txt
+RUN cd ./backend
+
+RUN BACKGROUND flask run --port:4000
+RUN cd ../
+RUN cd ./vite-project
+RUN npm install || true
+RUN npm run dev
+EXPOSE WEBSITE http://localhost:5173
+
+# node is a memory hog
+
+
+# RUN BACKGROUND npm start || python3 -m http.server 3000
